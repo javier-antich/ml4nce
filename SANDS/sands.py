@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import math
 import numpy as np
 import collections
+import uuid
 
 
 
@@ -24,10 +25,11 @@ from os.path import join
 
 device_inventory_labels = ['device_name','vendor','model','os','version','hw_revision','role','ip_address']
 interface_inventory_labels = ['link_id','unique_id','device_name','interface_name','interface_type','interface_ip_address','peer_device_name','peer_interface','peer_interface_ip_address','transceiver_vendor','interface_role']
+bgp_inventory_labels = ['session_id','unique_id','device_name','local_ip_address','peer_device_name','peer_ip_address']
 metric_policy_labels = ['metric','entity','pattern_type','P1','P1P','P2','P2P','P3','P3P']
 incident_policy_labels = ['incident_name','period','entity_table','entity_column','entity_name','impact_type','impact_details']
 event_template_labels = ['event_id','event_name','event_type','scope','fields','field_map','message','severity']
-event_policy_labels = ['policy_name','event_id','period','probability','entity_table','entity_column','entity_name','fields']
+event_policy_labels = ['policy_name','event_id','event_uuid','period','probability','entity_table','entity_column','entity_name','fields']
 
 device_metric_list = ['mem_utilization','cpu_utilization','bng_subscribers']
 interface_metric_list = ['traffic_out_mbps','traffic_in_mbps']
@@ -42,11 +44,11 @@ def generate_device_inventory():
         if i in range(1,4):
             inventory_entry = {
                 'device_name': 'C-'+str(i),
-                'vendor': 'Juniper',
-                'model': 'PTX10000',
-                'os': 'Junos',
-                'version':'21.3R1',
-                'hw_revision': 'hw3959392',
+                'vendor': 'Cisco',
+                'model': '8808',
+                'os': 'IOS-XR',
+                'version':'7.11.1',
+                'hw_revision': 'hw3959392-i',
                 'role':'core',
                 'ip_address':'10.2.1.'+str(i)
             }
@@ -54,19 +56,20 @@ def generate_device_inventory():
         else:
             inventory_entry = {
                 'device_name': 'C-4',
-                'vendor': 'Juniper',
-                'model': 'PTX10000',
-                'os': 'Junos',
-                'version':'22.1R3',
-                'hw_revision': 'hw3959392',
+                'vendor': 'Cisco',
+                'model': '8808',
+                'os': 'IOS-XR',
+                'version':'7.10.2',
+                'hw_revision': 'hw3959392-i',
                 'role':'core',
                 'ip_address':'10.2.1.4'
             }
-        device_inventory_df=device_inventory_df.append(inventory_entry,ignore_index=True)
+        device_inventory_df = pd.concat([device_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
+       
     
     #generate PE devices
     for i in range(1,101):
-        if i in range(1,51):
+        if i in range(1,41):
             inventory_entry = {
                 'device_name': 'PE-'+str(i),
                 'vendor': 'Juniper',
@@ -74,6 +77,28 @@ def generate_device_inventory():
                 'os': 'Junos',
                 'version':'21.3R1',
                 'hw_revision': 'hw3958888',
+                'role':'PE',
+                'ip_address':'10.2.2.'+str(i)
+            }
+        elif i in range(41,48):
+            inventory_entry = {
+                'device_name': 'PE-'+str(i),
+                'vendor': 'Juniper',
+                'model': 'MX480',
+                'os': 'Junos',
+                'version':'22.1R3',
+                'hw_revision': 'hw3958895',
+                'role':'PE',
+                'ip_address':'10.2.2.'+str(i)
+            }
+        elif i in range(48,51):
+            inventory_entry = {
+                'device_name': 'PE-'+str(i),
+                'vendor': 'Juniper',
+                'model': 'MX480',
+                'os': 'Junos',
+                'version':'21.3R1',
+                'hw_revision': 'hw3958895',
                 'role':'PE',
                 'ip_address':'10.2.2.'+str(i)
             }
@@ -91,22 +116,22 @@ def generate_device_inventory():
         elif i in range(55,59):
             inventory_entry = {
                 'device_name': 'PE-'+str(i),
-                'vendor': 'Juniper',
-                'model': 'MX960',
-                'os': 'Junos',
-                'version':'22.1R3',
-                'hw_revision': 'hw3958890',
+                'vendor': 'Nokia',
+                'model': '7450',
+                'os': 'SROS',
+                'version':'23.3.R1',
+                'hw_revision': 'hw3958890-n',
                 'role':'PE',
                 'ip_address':'10.2.2.'+str(i)
             }
         elif i in range(59,61):
             inventory_entry = {
                 'device_name': 'PE-'+str(i),
-                'vendor': 'Juniper',
-                'model': 'MX960',
-                'os': 'Junos',
-                'version':'21.3R1',
-                'hw_revision': 'hw3958890',
+                'vendor': 'Nokia',
+                'model': '7450',
+                'os': 'SROS',
+                'version':'23.1.R2',
+                'hw_revision': 'hw3958890-n',
                 'role':'PE',
                 'ip_address':'10.2.2.'+str(i)
             }
@@ -128,7 +153,7 @@ def generate_device_inventory():
                 'model': 'ASR9K',
                 'os': 'IOS-XR',
                 'version':'7.6',
-                'hw_revision': 'hw-asr-950777',
+                'hw_revision': 'hw-asr-950778',
                 'role':'PE',
                 'ip_address':'10.2.2.'+str(i)
             }
@@ -144,7 +169,7 @@ def generate_device_inventory():
                 'ip_address':'10.2.2.'+str(i)
             }
             
-        device_inventory_df=device_inventory_df.append(inventory_entry,ignore_index=True)
+        device_inventory_df = pd.concat([device_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
     
     #generate sd-wan edge devices
     
@@ -153,54 +178,54 @@ def generate_device_inventory():
             for j in range(1,3):
                 inventory_entry = {
                     'device_name': 'E-'+str(i)+'-'+str(j),
-                    'vendor': 'Versa',
-                    'model': 'versa_1',
-                    'os': 'VOS',
-                    'version':'21.1.0',
-                    'hw_revision': 'hw-versa-0001',
+                    'vendor': 'Meraki',
+                    'model': 'MX450',
+                    'os': 'meraki',
+                    'version':'18.101',
+                    'hw_revision': 'hw-mx450-0001',
                     'role':'vedge_hub',
                     'ip_address':'10.3.'+str(i)+'.'+str(j)
                 }
-                device_inventory_df=device_inventory_df.append(inventory_entry,ignore_index=True)
+                device_inventory_df = pd.concat([device_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
         elif i in range(2,96):
             for j in range(1,3):
                 inventory_entry = {
                     'device_name': 'E-'+str(i)+'-'+str(j),
-                    'vendor': 'Versa',
-                    'model': 'versa_1',
-                    'os': 'VOS',
-                    'version':'21.1.0',
-                    'hw_revision': 'hw-versa-0001',
+                    'vendor': 'Meraki',
+                    'model': 'MX67',
+                    'os': 'meraki',
+                    'version':'16.16',
+                    'hw_revision': 'hw-mx67-0001',
                     'role':'vedge_branch',
                     'ip_address':'10.3.'+str(i)+'.'+str(j)
                 }
-                device_inventory_df=device_inventory_df.append(inventory_entry,ignore_index=True)
+                device_inventory_df = pd.concat([device_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
         elif i in range(96,100):
             for j in range(1,3):
                 inventory_entry = {
                     'device_name': 'E-'+str(i)+'-'+str(j),
-                    'vendor': 'Versa',
-                    'model': 'versa_2',
-                    'os': 'VOS',
-                    'version':'21.1.1',
-                    'hw_revision': 'hw-versa-0001',
+                    'vendor': 'Meraki',
+                    'model': 'MX67',
+                    'os': 'meraki',
+                    'version':'16.17',
+                    'hw_revision': 'hw-mx67-0001',
                     'role':'vedge_branch',
                     'ip_address':'10.3.'+str(i)+'.'+str(j)
                 }
-                device_inventory_df=device_inventory_df.append(inventory_entry,ignore_index=True)
+                device_inventory_df = pd.concat([device_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
         elif i == 100:
             for j in range(1,3):
                 inventory_entry = {
                     'device_name': 'E-'+str(i)+'-'+str(j),
-                    'vendor': 'Versa',
-                    'model': 'versa_2',
-                    'os': 'VOS',
-                    'version':'21.1.0',
-                    'hw_revision': 'hw-versa-0002',
+                    'vendor': 'Meraki',
+                    'model': 'MX450',
+                    'os': 'meraki',
+                    'version':'18.101',
+                    'hw_revision': 'hw-mx450-0002',
                     'role':'vedge_hub',
                     'ip_address':'10.3.'+str(i)+'.'+str(j)
                 }
-                device_inventory_df=device_inventory_df.append(inventory_entry,ignore_index=True)
+                device_inventory_df = pd.concat([device_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
     
     
     return device_inventory_df
@@ -226,6 +251,19 @@ def generate_interface_inventory():
     #'link_id','device_name','interface_name','interface_type','interface_ip_address','peer_device_name','peer_interface','peer_interface_ip','transceiver_vendor',
     #core devices
     for x in range(1,5):
+        inventory_entry = {
+                'link_id':'155.1.1.'+str(x),
+                'device_name': 'C-'+str(x),
+                'interface_name': 'loopback0',
+                'interface_type': 'loopback',
+                'interface_ip_address': '155.1.1.'+str(x)+'/32',
+                'peer_device_name': 'N/A',
+                'peer_interface': 'N/A',
+                'peer_interface_ip_address': 'N/A',
+                'transceiver_vendor': 'N/A',
+                'interface_role':'loopback'
+            }
+        interface_inventory_df = pd.concat([interface_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
         for y in range(1,101):
             inventory_entry = {
                 'link_id':'11.'+str(x)+'.'+str(y),
@@ -239,9 +277,23 @@ def generate_interface_inventory():
                 'transceiver_vendor': 'Acacia' if y<30 else ('APIC' if y>=30 and y<80 else 'Applied'),
                 'interface_role':'core'
             }
-            interface_inventory_df=interface_inventory_df.append(inventory_entry,ignore_index=True)
+            interface_inventory_df = pd.concat([interface_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
+            
     #PE devices
     for y in range(1,101):
+        inventory_entry = {
+                'link_id':'155.1.2.'+str(y),
+                'device_name': 'PE-'+str(y),
+                'interface_name': 'loopback0',
+                'interface_type': 'loopback',
+                'interface_ip_address': '155.1.2.'+str(y)+'/32',
+                'peer_device_name': 'N/A',
+                'peer_interface': 'N/A',
+                'peer_interface_ip_address': 'N/A',
+                'transceiver_vendor': 'N/A',
+                'interface_role':'loopback'
+            }
+        interface_inventory_df = pd.concat([interface_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
         for x in range(1,5):
             inventory_entry = {
                 'link_id':'11.'+str(x)+'.'+str(y),
@@ -255,7 +307,7 @@ def generate_interface_inventory():
                 'transceiver_vendor': 'Acacia' if y<30 else ('APIC' if y>=30 and y<80 else 'Applied'),
                 'interface_role':'core'
             }
-            interface_inventory_df=interface_inventory_df.append(inventory_entry,ignore_index=True)
+            interface_inventory_df = pd.concat([interface_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
         for z in range(1,3):
             inventory_entry = {
                 'link_id':'12.'+str(y)+'.'+str(z),
@@ -269,7 +321,7 @@ def generate_interface_inventory():
                 'transceiver_vendor': 'Acacia' if y<30 else ('APIC' if y>=30 and y<80 else 'Applied'),
                 'interface_role':'edge'
             }
-            interface_inventory_df=interface_inventory_df.append(inventory_entry,ignore_index=True)
+            interface_inventory_df = pd.concat([interface_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
     
     
     #sd-wan edge devices
@@ -287,7 +339,20 @@ def generate_interface_inventory():
                 'transceiver_vendor': 'Acacia' if y<30 else ('APIC' if y>=30 and y<80 else 'Applied'),
                 'interface_role':'edge'
             }
-            interface_inventory_df=interface_inventory_df.append(inventory_entry,ignore_index=True)
+            interface_inventory_df = pd.concat([interface_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
+            inventory_entry = {
+                'link_id':'155.2.'+str(y)+'.'+str(z),
+                'device_name': 'E-'+str(y)+'-'+str(z),
+                'interface_name': 'loopback0',
+                'interface_type': 'loopback',
+                'interface_ip_address': '155.2.'+str(y)+'.'+str(z)+'/32',
+                'peer_device_name': 'N/A',
+                'peer_interface': 'N/A',
+                'peer_interface_ip_address': 'N/A',
+                'transceiver_vendor': 'N/A',
+                'interface_role':'loopback'
+            }
+            interface_inventory_df = pd.concat([interface_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
             if y in [1,100]:
                 for a in range(2,100):
                     for b in range(1,3):
@@ -304,7 +369,7 @@ def generate_interface_inventory():
                                 'transceiver_vendor': 'n/a',
                                 'interface_role':'sd-wan'
                             }
-                            interface_inventory_df=interface_inventory_df.append(inventory_entry,ignore_index=True)
+                            interface_inventory_df = pd.concat([interface_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
             else:
                 for a in [1,100]:
                     for b in range(1,3):
@@ -320,9 +385,98 @@ def generate_interface_inventory():
                                 'transceiver_vendor': 'n/a',
                                 'interface_role':'sd-wan'
                             }
-                            interface_inventory_df=interface_inventory_df.append(inventory_entry,ignore_index=True)
+                            interface_inventory_df = pd.concat([interface_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
     interface_inventory_df['unique_id']=interface_inventory_df['device_name']+'-'+interface_inventory_df['interface_name']
     return interface_inventory_df
+    
+    
+def generate_bgp_inventory():
+        bgp_inventory_df = pd.DataFrame(columns = bgp_inventory_labels)
+    #'session_id','unique_id','device_name','local_ip_address','peer_device_name','peer_ip_address',
+    #core devices
+        #for x in range(1,5):
+        #    for y in range(1,101):
+                
+                
+                
+        #PE devices
+        for y in range(1,101):
+            for x in range(1,4):
+                
+                    inventory_entry = {
+                        'session_id':'bgp.'+str(x)+'.'+str(y),
+                        'device_name': 'PE-'+str(y),
+                        'local_ip_address': '155.1.2.'+str(y)+'/32',
+                        'peer_device_name': 'C-'+str(x),
+                        'peer_ip_address': '155.1.1.'+str(x)+'/32',
+    
+                    }
+                    bgp_inventory_df = pd.concat([bgp_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
+            
+        #Core devices:
+        for y in range(1,101):
+            for x in range(1,4):
+                
+                    inventory_entry = {
+                        'session_id':'bgp.'+str(x)+'.'+str(y),
+                        'device_name': 'C-'+str(x),
+                        'local_ip_address': '155.1.1.'+str(x)+'/32',
+                        'peer_device_name': 'PE-'+str(y),
+                        'peer_ip_address': '155.1.2.'+str(y)+'/32',
+    
+                    }
+                    bgp_inventory_df = pd.concat([bgp_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
+        
+        
+        #sd-wan edge devices
+        for y in range(1,101):
+            for z in range(1,3):
+                inventory_entry = {
+                    'session_id':'bgp.'+str(y)+'_'+str(z)+'.'+str(y),
+                    'device_name': 'E-'+str(y)+'-'+str(z),
+                    'local_ip_address': '155.2.'+str(y)+'.'+str(z)+'/32',
+                    'peer_device_name': 'PE-'+str(y),
+                    'peer_ip_address': '155.1.2.'+str(y)+'/32',
+    
+                }
+                bgp_inventory_df = pd.concat([bgp_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
+                inventory_entry = {
+                    'session_id':'bgp.'+str(y)+'_'+str(z)+'.'+str(y),
+                    'device_name': 'PE-'+str(y),
+                    'local_ip_address': '155.1.2.'+str(y)+'/32',
+                    'peer_device_name': 'E-'+str(y)+'-'+str(z),
+                    'peer_ip_address': '155.2.'+str(y)+'.'+str(z)+'/32',
+    
+                }
+                bgp_inventory_df = pd.concat([bgp_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
+                
+                if y in [1,100]:
+                    for a in range(2,100):
+                        for b in range(1,3):
+                             #these are the bgp sessions starting on the sd-wan hubs towards the branches   
+                                inventory_entry = {
+                                    'session_id':'bgp-'+str(y)+'-'+str(z)+'-'+str(a)+'-'+str(b),
+                                    'device_name': 'E-'+str(y)+'-'+str(z),
+                                    'local_ip_address': '155.2.'+str(y)+'.'+str(z)+'/32',
+                                    'peer_device_name': 'E-'+str(a)+'-'+str(b),
+                                    'peer_ip_address': '155.2.'+str(a)+'.'+str(b)+'/32',
+    
+                                }
+                                bgp_inventory_df = pd.concat([bgp_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
+                else:
+                    for a in [1,100]:
+                        for b in range(1,3):
+                                inventory_entry = {
+                                    'session_id':'bgp-'+str(y)+'-'+str(z)+'-'+str(a)+'-'+str(b),
+                                    'device_name': 'E-'+str(y)+'-'+str(z),
+                                    'local_ip_address': '155.2.'+str(y)+'.'+str(z)+'/32',
+                                    'peer_device_name': 'E-'+str(a)+'-'+str(b),
+                                    'peer_ip_address': '155.2.'+str(a)+'.'+str(b)+'/32',
+                                    
+                                }
+                                bgp_inventory_df = pd.concat([bgp_inventory_df, pd.DataFrame([inventory_entry])], ignore_index=True)
+        bgp_inventory_df['unique_id']=bgp_inventory_df['device_name']+'-'+bgp_inventory_df['peer_ip_address']
+        return bgp_inventory_df
 
 
 
@@ -458,7 +612,7 @@ def generate_device_metric_policy(device_inventory_df):
                             'P3':[0,1],
                             'P3P':0  
                         }        
-                device_metric_policy_df=device_metric_policy_df.append(policy_entry,ignore_index=True)
+                device_metric_policy_df=pd.concat([device_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
         elif metric == 'cpu_utilization':
             for i,entity in device_inventory_df.iterrows():
                 if entity['device_name'].split('-')[0]=='C':
@@ -622,7 +776,7 @@ def generate_device_metric_policy(device_inventory_df):
                             'P3':[95,100],
                             'P3P':10  
                         }        
-                device_metric_policy_df=device_metric_policy_df.append(policy_entry,ignore_index=True)
+                device_metric_policy_df=pd.concat([device_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
         elif metric == 'bng_subscribers':
             for i,entity in device_inventory_df.iterrows():
                 if entity['device_name'].split('-')[0]=='PE':
@@ -639,7 +793,7 @@ def generate_device_metric_policy(device_inventory_df):
                             'P3':[5000,6000],
                             'P3P':2  
                         }
-                        device_metric_policy_df=device_metric_policy_df.append(policy_entry,ignore_index=True)
+                        device_metric_policy_df=pd.concat([device_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
                     elif int(entity['device_name'].split('-')[1]) in range(5,101):
                                                 
                         policy_entry = {
@@ -653,7 +807,7 @@ def generate_device_metric_policy(device_inventory_df):
                             'P3':[0,1],
                             'P3P':0  
                         }
-                        device_metric_policy_df=device_metric_policy_df.append(policy_entry,ignore_index=True)
+                        device_metric_policy_df=pd.concat([device_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
                 else:                       
                     policy_entry = {
                             'metric': metric,
@@ -666,7 +820,7 @@ def generate_device_metric_policy(device_inventory_df):
                             'P3':[0,1],
                             'P3P':0  
                     }
-                    device_metric_policy_df=device_metric_policy_df.append(policy_entry,ignore_index=True)
+                    device_metric_policy_df=pd.concat([device_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
     return device_metric_policy_df
 
 
@@ -691,7 +845,7 @@ def generate_link_metric_policy(interface_inventory_df):
                     'P3':[0,1],
                     'P3P':0  
                 }
-                link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
                 
             elif int(entity['interface_name'].split('-')[3]) in range(91,101):
                 #this is the traffic out entry
@@ -706,7 +860,7 @@ def generate_link_metric_policy(interface_inventory_df):
                     'P3':[0,1],
                     'P3P':0  
                 }
-                link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
         elif entity['device_name'].split('-')[0]=='PE':
             if int(entity['interface_name'].split('-')[2]) == 1:
                 if int(entity['device_name'].split('-')[1]) in range(1,51):
@@ -722,7 +876,7 @@ def generate_link_metric_policy(interface_inventory_df):
                         'P3':[0,1],
                         'P3P':0  
                     }
-                    link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                    link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
                 elif int(entity['device_name'].split('-')[1]) in range(51,59):
                     if int(entity['interface_name'].split('-')[3]) in range(1,4):
                         policy_entry = {
@@ -736,7 +890,7 @@ def generate_link_metric_policy(interface_inventory_df):
                             'P3':[0,1],
                             'P3P':0  
                         }
-                        link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                        link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
                     elif int(entity['interface_name'].split('-')[3]) in range(4,5):
                         policy_entry = {
                             'metric': 'traffic_out_mbps',
@@ -749,7 +903,7 @@ def generate_link_metric_policy(interface_inventory_df):
                             'P3':[5,10],
                             'P3P':10  
                         }
-                        link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                        link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
                 elif int(entity['device_name'].split('-')[1]) in range(59,101):
                     policy_entry = {
                             'metric': 'traffic_out_mbps',
@@ -762,7 +916,7 @@ def generate_link_metric_policy(interface_inventory_df):
                             'P3':[0,5],
                             'P3P':10  
                     }
-                    link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                    link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
             elif int(entity['interface_name'].split('-')[2]) == 2:
                 policy_entry = {
                             'metric': 'traffic_out_mbps',
@@ -775,7 +929,7 @@ def generate_link_metric_policy(interface_inventory_df):
                             'P3':[50,60],
                             'P3P':10  
                 }
-                link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
         elif entity['device_name'].split('-')[0]=='E':
             if entity['interface_name'].split('-')[0] == 'et':
                 if entity['device_name'].split('-')[1] in [1,100]:
@@ -790,7 +944,7 @@ def generate_link_metric_policy(interface_inventory_df):
                             'P3':[0,1],
                             'P3P':5  
                     }
-                    link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                    link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
                 else:
                     policy_entry = {
                             'metric': 'traffic_out_mbps',
@@ -803,7 +957,7 @@ def generate_link_metric_policy(interface_inventory_df):
                             'P3':[0,1],
                             'P3P':5  
                     }
-                    link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                    link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
             if entity['interface_name'].split('-')[0] == 'tun':
                 if entity['device_name'].split('-')[1] in [1,100]:
                     if int(entity['interface_name'].split('-')[1]) not in [31,32]:
@@ -818,7 +972,7 @@ def generate_link_metric_policy(interface_inventory_df):
                             'P3':[0,1],
                             'P3P':2  
                         }
-                        link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                        link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
                     else:
                         policy_entry = {
                             'metric': 'traffic_out_mbps',
@@ -831,7 +985,7 @@ def generate_link_metric_policy(interface_inventory_df):
                             'P3':[0,1],
                             'P3P':0  
                         }
-                        link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                        link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
                 else:
                     policy_entry = {
                             'metric': 'traffic_out_mbps',
@@ -844,7 +998,7 @@ def generate_link_metric_policy(interface_inventory_df):
                             'P3':[0,1],
                             'P3P':2  
                     }
-                    link_metric_policy_df=link_metric_policy_df.append(policy_entry,ignore_index=True)
+                    link_metric_policy_df=pd.concat([link_metric_policy_df,pd.DataFrame([policy_entry])],ignore_index=True)
     return link_metric_policy_df
                         
         
@@ -1004,7 +1158,8 @@ def generate_event_templates():
         'severity': 'error',
         'message': "##timestamp##: if_mgr[##random##]: %INTF-STATE_MGR-3-STATE_CHANGE_EVENT : Interface changed state to down: ##interface_name## in device ##device_name##"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     event_template_entry = {
         'event_id': 2,
         'event_name': 'interface_up',
@@ -1017,34 +1172,35 @@ def generate_event_templates():
 
 
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_template_entry = {
         'event_id': 3,
         'event_name': 'bgp_session_down',
         'event_type': 'unstructured',
-        'scope': 'interface',
-        'fields': ['device_name','local_address','remote_peer_address','remote_id'],
-        'field_map': ['device_name','interface_ip_address','peer_interface_ip_address','peer_device_name'],
+        'scope': 'bgp_session',
+        'fields': ['device_name','local_ip_address','peer_ip_address','peer_device_name'],
+        'field_map': ['device_name','local_ip_address','peer_ip_address','peer_device_name'],
         'severity': 'critical',
-        'message': "##timestamp##: bgp_mgr[##random##]: %BGP-STATE_MGR-3-STATE_CHANGE_EVENT : BGP session to ##remote_peer_address## changed state to down in device ##device_name##"
+        'message': "##timestamp##: bgp_mgr[##random##]: %BGP-STATE_MGR-3-STATE_CHANGE_EVENT : BGP session to ##peer_ip_address## changed state to down in device ##device_name##"
 
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
+    
     
     event_template_entry = {
         'event_id': 4,
         'event_name': 'bgp_session_up',
         'event_type': 'unstructured',
-        'scope': 'interface',
-        'fields': ['device_name','local_address','remote_peer_address','remote_id'],
-        'field_map': ['device_name','interface_ip_address','peer_interface_ip_address','peer_device_name'],
+        'scope': 'bgp_session',
+        'fields': ['device_name','local_ip_address','peer_ip_address','peer_device_name'],
+        'field_map': ['device_name','local_ip_address','peer_ip_address','peer_device_name'],
         'severity': 'info',
-        'message': "##timestamp##: bgp_mgr[##random##]: %BGP-STATE_MGR-3-STATE_CHANGE_EVENT : BGP session to ##remote_peer_address## changed state to up in device ##device_name##"
+        'message': "##timestamp##: bgp_mgr[##random##]: %BGP-STATE_MGR-3-STATE_CHANGE_EVENT : BGP session to ##peer_ip_address## changed state to up in device ##device_name##"
 
 
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_template_entry = {
         'event_id': 5,
@@ -1055,7 +1211,7 @@ def generate_event_templates():
         'field_map': ['device_name','ip_address','version','hw_revision','role','vendor','model'],
         'severity': 'critical'
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_template_entry = {
         'event_id': 6,
@@ -1067,7 +1223,7 @@ def generate_event_templates():
         'severity': 'critical',
         'message': "##timestamp##: shelf_mgr[##random##]: %INFRA-SHELF_MGR-3-HW_FAILURE_EVENT : HW failure event HW_EVENT_FAILURE, event_reason_str 'No Input or HW Power Failure' for device ##device_name## with hw revision ##hw_revision##"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_template_entry = {
         'event_id': 7,
@@ -1079,7 +1235,7 @@ def generate_event_templates():
         'severity': 'warning',
         'message': "##timestamp##: shelf_mgr[##random##]: %INFRA-SHELF_MGR-3-HW_HIGH_TEMP : HW warning event HW_EVENT_FAILURE, event_reason_str 'High Temperature' for device ##device_name## with hw revision ##hw_revision##"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
 
     event_template_entry = {
         'event_id': 8,
@@ -1091,7 +1247,7 @@ def generate_event_templates():
         'severity': 'info',
         'message': "##timestamp##: exec[##random##]: %SECURITY-LOGIN-6-AUTHEN_SUCCESS : Successfully authenticated user 'uid##random##' from 'console' on ##device_name##"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_template_entry = {
         'event_id': 9,
@@ -1103,7 +1259,7 @@ def generate_event_templates():
         'severity': 'info',
         'message': "##timestamp##: exec[##random##]: %MGBL-exec-3-LOGIN_AUTHEN : Login Authentication failed. Exiting.."
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_template_entry = {
         'event_id': 10,
@@ -1115,7 +1271,7 @@ def generate_event_templates():
         'severity': 'info',
         'message': "##timestamp##: config[##random##]: %MGBL-CONFIG-6-DB_COMMIT : Configuration committed by user 'UID##random##'. Use 'show configuration commit changes ##random## to view the changes"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     
     event_template_entry = {
@@ -1128,7 +1284,7 @@ def generate_event_templates():
         'severity': 'info',
         'message': "##timestamp##: SSHD_[##random##]: %SECURITY-SSHD-6-INFO_USER_LOGOUT : User UID##random## from ##device_name## logged out on 'vty0'"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_template_entry = {
         'event_id': 12,
@@ -1140,7 +1296,7 @@ def generate_event_templates():
         'severity': 'critical',
         'message': "##timestamp##: %ENVMON-2-SYSTEM_FAN_FAILED: Critical Warning: System Fan has failed. Please replace the fan to prevent system overheating"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_template_entry = {
         'event_id': 13,
@@ -1152,7 +1308,7 @@ def generate_event_templates():
         'severity': 'critical',
         'message': "##timestamp##: npu_drvr[##random##]: %PLATFORM-VETH_PD-2-RX_FAULT : Interface ##interface_name##, Detected Local Fault"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
 
     event_template_entry = {
         'event_id': 14,
@@ -1164,7 +1320,7 @@ def generate_event_templates():
         'severity': 'warning',
         'message': "##timestamp##: %ENVMON-2-IN_OUTLET_OVERTEMP: ##device_name## Warning: Intake Left Temperature 43C Exceeds 42C. Please resolve system cooling to prevent system damage"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_template_entry = {
         'event_id': 15,
@@ -1176,7 +1332,7 @@ def generate_event_templates():
         'severity': 'critical',
         'message': "##timestamp##: lda_server[##random##]: %PKT_INFRA-FM-3-FAULT_MAJOR : ALARM_MAJOR :OPTICS RX POWER LANE-3 HIGH WARNING :CLEAR ##interface_name##"
     }
-    event_templates = event_templates.append(event_template_entry,ignore_index=True)
+    event_templates = pd.concat([event_templates, pd.DataFrame([event_template_entry])], ignore_index=True)
     
     event_templates.set_index('event_id',inplace=True)
     return event_templates
@@ -1186,224 +1342,378 @@ def generate_event_templates():
 
 
 
-def generate_event_policy(event_templates,device_inventory_df,interface_inventory_df):
+def generate_event_policy(event_templates,device_inventory_df,interface_inventory_df,bgp_inventory_df):
     event_policy = pd.DataFrame(columns=event_policy_labels)
 
 
     for i,entity in device_inventory_df.iterrows():
+        if entity['device_name'].split('-')[0]=='C':
+            if int(entity['device_name'].split('-')[1]) in range(1,4):
+                event_policy_entry = {
+                    'policy_name':'failure on C-1..3',
+                    'event_id': 5,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 1,
+                    'entity_table': 'devices',
+                    'entity_column': 'device_name',
+                    'entity_name': entity['device_name'],
+                    'fields': [entity['device_name'],entity['ip_address'],entity['version'],entity['hw_revision'],entity['role'],entity['vendor'],entity['model']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            elif int(entity['device_name'].split('-')[1]) in range(4,5):
+                event_policy_entry = {
+                    'policy_name':'failure on C-4',
+                    'event_id': 5,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 3,
+                    'entity_table': 'devices',
+                    'entity_column': 'device_name',
+                    'entity_name': entity['device_name'],
+                    'fields': [entity['device_name'],entity['ip_address'],entity['version'],entity['hw_revision'],entity['role'],entity['vendor'],entity['model']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
         if entity['device_name'].split('-')[0]=='PE':
             if int(entity['device_name'].split('-')[1]) in range(1,51):
                 event_policy_entry = {
                     'policy_name':'low hardware faults in PEs',
-                    'event_id': 5,
+                    'event_id': 6,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
-                    'probability': 20,
+                    'probability': 1,
                     'entity_table': 'devices',
                     'entity_column': 'device_name',
                     'entity_name': entity['device_name'],
-                    'fields': [entity['device_name'],entity['ip_address'],entity['version'],entity['hw_revision'],entity['role'],entity['vendor'],entity['model']]                   
+                    'fields': [entity['device_name'],entity['ip_address'],entity['hw_revision']]                   
                 }
-                event_policy = event_policy.append(event_policy_entry,ignore_index=True)
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
 
-            elif int(entity['device_name'].split('-')[1]) in range(51,59):
+            elif int(entity['device_name'].split('-')[1]) in range(51,55):
                 event_policy_entry = {
-                    'policy_name':'medium hardware faults in PEs',
-                    'event_id': 5,
+                    'policy_name':'Juniper PEs 51--54',
+                    'event_id': 6,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
-                    'probability': 40,
+                    'probability': 1,
                     'entity_table': 'devices',
                     'entity_column': 'device_name',
                     'entity_name': entity['device_name'],
-                    'fields': [entity['device_name'],entity['ip_address'],entity['version'],entity['hw_revision'],entity['role'],entity['vendor'],entity['model']]                   
+                    'fields': [entity['device_name'],entity['ip_address'],entity['hw_revision']]                   
                 }
-                event_policy = event_policy.append(event_policy_entry,ignore_index=True)
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            elif int(entity['device_name'].split('-')[1]) in range(55,59):
+                event_policy_entry = {
+                    'policy_name':'Nokia PEs 55--58',
+                    'event_id': 7,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 2,
+                    'entity_table': 'devices',
+                    'entity_column': 'device_name',
+                    'entity_name': entity['device_name'],
+                    'fields': [entity['device_name'],entity['ip_address'],entity['hw_revision']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
             elif int(entity['device_name'].split('-')[1]) in range(59,61):
                 event_policy_entry = {
-                    'policy_name':'high hardware faults in PEs',
-                    'event_id': 5,
-                    'period': 'minute',
-                    'probability': 90,
-                    'entity_table': 'devices',
-                    'entity_column': 'device_name',
-                    'entity_name': entity['device_name'],
-                    'fields': [entity['device_name'],entity['ip_address'],entity['version'],entity['hw_revision'],entity['role'],entity['vendor'],entity['model']]                   
-                }
-                event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-            else:
-                event_policy_entry = {
-                    'policy_name':'all the other PEs devices',
-                    'event_id': 5,
-                    'period': 'minute',
-                    'probability': 15,
-                    'entity_table': 'devices',
-                    'entity_column': 'device_name',
-                    'entity_name': entity['device_name'],
-                    'fields': [entity['device_name'],entity['ip_address'],entity['version'],entity['hw_revision'],entity['role'],entity['vendor'],entity['model']]                   
-                }
-                event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-        else:
-            event_policy_entry = {
-                    'policy_name':'hardware fault',
-                    'event_id': 6,
-                    'period': 'minute',
-                    'probability': 5,
-                    'entity_table': 'devices',
-                    'entity_column': 'device_name',
-                    'entity_name': entity['device_name'],
-                    'fields': [entity['device_name'],entity['ip_address'],entity['hw_revision']]                   
-                }
-            event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-            event_policy_entry = {
-                    'policy_name':'high temperature',
+                    'policy_name':'Nokia PEs 59--61',
                     'event_id': 7,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
-                    'probability': 40,
+                    'probability': 1,
                     'entity_table': 'devices',
                     'entity_column': 'device_name',
                     'entity_name': entity['device_name'],
                     'fields': [entity['device_name'],entity['ip_address'],entity['hw_revision']]                   
                 }
-            event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-            event_policy_entry = {
-                    'policy_name':'user login',
-                    'event_id': 8,
-                    'period': 'minute',
-                    'probability': 15,
-                    'entity_table': 'devices',
-                    'entity_column': 'device_name',
-                    'entity_name': entity['device_name'],
-                    'fields': [entity['device_name'],entity['ip_address']]                   
-                }
-            event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-            event_policy_entry = {
-                    'policy_name':'login failure',
-                    'event_id': 9,
-                    'period': 'minute',
-                    'probability': 20,
-                    'entity_table': 'devices',
-                    'entity_column': 'device_name',
-                    'entity_name': entity['device_name'],
-                    'fields': [entity['device_name'],entity['ip_address']]                   
-                }
-            event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-            event_policy_entry = {
-                    'policy_name':'config change',
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            elif int(entity['device_name'].split('-')[1]) in range(61,91):
+                event_policy_entry = {
+                    'policy_name':'Cisco PEs 61--90',
                     'event_id': 10,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
-                    'probability': 10,
+                    'probability': 1,
                     'entity_table': 'devices',
                     'entity_column': 'device_name',
                     'entity_name': entity['device_name'],
                     'fields': [entity['device_name'],entity['ip_address']]                   
                 }
-            event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-            event_policy_entry = {
-                    'policy_name':'user logout',
-                    'event_id': 11,
-                    'period': 'minute',
-                    'probability': 10,
-                    'entity_table': 'devices',
-                    'entity_column': 'device_name',
-                    'entity_name': entity['device_name'],
-                    'fields': [entity['device_name'],entity['ip_address']]                   
-                }
-            event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-            
-            event_policy_entry = {
-                    'policy_name':'system fan issue',
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            elif int(entity['device_name'].split('-')[1]) in range(91,98):
+                event_policy_entry = {
+                    'policy_name':'Cisco PEs 91--97',
                     'event_id': 12,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
-                    'probability': 10,
+                    'probability': 1,
                     'entity_table': 'devices',
                     'entity_column': 'device_name',
                     'entity_name': entity['device_name'],
                     'fields': [entity['device_name'],entity['ip_address']]                   
                 }
-            event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-            
-            event_policy_entry = {
-                    'policy_name':'very high temperature',
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            elif int(entity['device_name'].split('-')[1]) in range(98,101):
+                event_policy_entry = {
+                    'policy_name':'Cisco PEs 98--100',
                     'event_id': 14,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
-                    'probability': 30,
+                    'probability': 3,
                     'entity_table': 'devices',
                     'entity_column': 'device_name',
                     'entity_name': entity['device_name'],
                     'fields': [entity['device_name'],entity['ip_address'],entity['hw_revision']]                   
                 }
-            event_policy = event_policy.append(event_policy_entry,ignore_index=True)
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            
+        
    
             
     for i,entity in interface_inventory_df.iterrows():
-        event_policy_entry = {
-                    'policy_name':'interface down',
+        if entity['device_name'].split('-')[0]=='C':
+            if int(entity['device_name'].split('-')[1]) in range(1,4):
+                event_policy_entry = {
+                    'policy_name':'Core C-1..3',
                     'event_id': 1,
-                    'period': 'minute',
-                    'probability': 5,
-                    'entity_table': 'interfaces',
-                    'entity_column': 'link_id',
-                    'entity_name': entity['link_id'],
-                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
-        }
-        event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-        event_policy_entry = {
-                    'policy_name':'interface up',
-                    'event_id': 2,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
                     'probability': 1,
                     'entity_table': 'interfaces',
                     'entity_column': 'link_id',
                     'entity_name': entity['link_id'],
                     'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
-        }
-        
-        event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-        event_policy_entry = {
-                    'policy_name':'bgp down',
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            elif int(entity['device_name'].split('-')[1]) in range(4,5):
+                event_policy_entry = {
+                    'policy_name':'Core C-4',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 4,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+        if entity['device_name'].split('-')[0]=='PE':
+            if int(entity['device_name'].split('-')[1]) in range(1,41):
+                event_policy_entry = {
+                    'policy_name':'PE-1..40',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 1,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+
+            elif int(entity['device_name'].split('-')[1]) in range(41,48):
+                event_policy_entry = {
+                    'policy_name':'PE-41..47',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 1,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            
+            elif int(entity['device_name'].split('-')[1]) in range(48,51):
+                event_policy_entry = {
+                    'policy_name':'PE-48..50',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 2,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            
+            elif int(entity['device_name'].split('-')[1]) in range(51,55):
+                event_policy_entry = {
+                    'policy_name':'PE-51..54',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 1,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+
+            elif int(entity['device_name'].split('-')[1]) in range(55,59):
+                event_policy_entry = {
+                    'policy_name':'PE-55..59',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 1,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+
+            elif int(entity['device_name'].split('-')[1]) in range(59,61):
+                event_policy_entry = {
+                    'policy_name':'PE-59..60',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 4,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            
+            elif int(entity['device_name'].split('-')[1]) in range(61,91):
+                event_policy_entry = {
+                    'policy_name':'PE-61..90',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 1,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+
+            elif int(entity['device_name'].split('-')[1]) in range(91,98):
+                event_policy_entry = {
+                    'policy_name':'PE-91..97',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 1,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+
+            elif int(entity['device_name'].split('-')[1]) in range(98,101):
+                event_policy_entry = {
+                    'policy_name':'PE-98..100',
+                    'event_id': 1,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 3,
+                    'entity_table': 'interfaces',
+                    'entity_column': 'link_id',
+                    'entity_name': entity['link_id'],
+                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            
+    for i,entity in bgp_inventory_df.iterrows():
+        if entity['device_name'].split('-')[0]=='C':
+            if int(entity['device_name'].split('-')[1]) in range(1,4):
+                event_policy_entry = {
+                    'policy_name':'Core C-1..3',
                     'event_id': 3,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
                     'probability': 1,
-                    'entity_table': 'interfaces',
-                    'entity_column': 'link_id',
-                    'entity_name': entity['link_id'],
-                    'fields': [entity['device_name'],entity['interface_ip_address'],entity['peer_interface_ip_address'],entity['peer_device_name']]                   
-        }
-        event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-        event_policy_entry = {
-                    'policy_name':'bgp up',
-                    'event_id': 4,
+                    'entity_table': 'bgp_sessions',
+                    'entity_column': 'session_id',
+                    'entity_name': entity['session_id'],
+                    'fields': [entity['device_name'],entity['local_ip_address'],entity['peer_ip_address'],entity['peer_device_name']]                   
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            elif int(entity['device_name'].split('-')[1]) in range(4,5):
+                event_policy_entry = {
+                    'policy_name':'Core C-4',
+                    'event_id': 3,
+                    'event_uuid': str(uuid.uuid4()),
+                    'period': 'minute',
+                    'probability': 3,
+                    'entity_table': 'bgp_sessions',
+                    'entity_column': 'session_id',
+                    'entity_name': entity['session_id'],
+                    'fields': [entity['device_name'],entity['local_ip_address'],entity['peer_ip_address'],entity['peer_device_name']]                    
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+        if entity['device_name'].split('-')[0]=='PE':
+            if int(entity['device_name'].split('-')[1]) in range(1,41):
+                event_policy_entry = {
+                    'policy_name':'PE-1..40',
+                    'event_id': 3,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
                     'probability': 1,
-                    'entity_table': 'interfaces',
-                    'entity_column': 'link_id',
-                    'entity_name': entity['link_id'],
-                    'fields': [entity['device_name'],entity['interface_ip_address'],entity['peer_interface_ip_address'],entity['peer_device_name']]                   
-        }
-        event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-        
-        event_policy_entry = {
-                    'policy_name':'interface local fault',
-                    'event_id': 13,
+                    'entity_table': 'bgp_sessions',
+                    'entity_column': 'session_id',
+                    'entity_name': entity['session_id'],
+                    'fields': [entity['device_name'],entity['local_ip_address'],entity['peer_ip_address'],entity['peer_device_name']]                    
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+
+            elif int(entity['device_name'].split('-')[1]) in range(41,48):
+                event_policy_entry = {
+                    'policy_name':'PE-41..47',
+                    'event_id': 3,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
-                    'probability': 1,
-                    'entity_table': 'interfaces',
-                    'entity_column': 'link_id',
-                    'entity_name': entity['link_id'],
-                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
-        }
-        event_policy = event_policy.append(event_policy_entry,ignore_index=True)
-        
-        event_policy_entry = {
-                    'policy_name':'interface optics fault',
-                    'event_id': 15,
+                    'probability': 2,
+                    'entity_table': 'bgp_sessions',
+                    'entity_column': 'session_id',
+                    'entity_name': entity['session_id'],
+                    'fields': [entity['device_name'],entity['local_ip_address'],entity['peer_ip_address'],entity['peer_device_name']]                    
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            
+            elif int(entity['device_name'].split('-')[1]) in range(48,51):
+                event_policy_entry = {
+                    'policy_name':'PE-48..50',
+                    'event_id': 3,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': 'minute',
-                    'probability': 1,
-                    'entity_table': 'interfaces',
-                    'entity_column': 'link_id',
-                    'entity_name': entity['link_id'],
-                    'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
-        }
-        event_policy = event_policy.append(event_policy_entry,ignore_index=True)
+                    'probability': 4,
+                    'entity_table': 'bgp_sessions',
+                    'entity_column': 'session_id',
+                    'entity_name': entity['session_id'],
+                    'fields': [entity['device_name'],entity['local_ip_address'],entity['peer_ip_address'],entity['peer_device_name']]                    
+                }
+                event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+            
+            
+
+
+        #else:
+        #    event_policy_entry = {
+        #            'policy_name':'interface down any other device low prob',
+        #            'event_id': 1,
+        #            'period': 'minute',
+        #            'probability': 1,
+        #            'entity_table': 'interfaces',
+        #            'entity_column': 'link_id',
+        #            'entity_name': entity['link_id'],
+        #            'fields': [entity['device_name'],entity['interface_name'],entity['link_id']]                   
+        #        }
+        #    event_policy = pd.concat([event_policy, pd.DataFrame([event_policy_entry])], ignore_index=True)
+
+
         
     return event_policy
 
@@ -1427,6 +1737,7 @@ def generate_event(target_time,event_policy_entry,event_templates):
             'severity': event_templates.loc[event_id,'severity']
         }
     elif event_type == 'unstructured':
+        
         for i in range(len(event_policy_entry['fields'])):
             fields[event_templates.loc[event_id,'fields'][i]]=event_policy_entry['fields'][i]
         message_components = event_template['message'].split('##')
@@ -1461,7 +1772,7 @@ def generate_incident_policy():
     
     incident_1_entry = {
         'incident_name': 'event sequence test',
-        'period': 'minute',
+        'period': 'hour',
         'entity_table': 'devices',
         'entity_column': 'device_name',
         'entity_name': 'PE-57',
@@ -1469,46 +1780,80 @@ def generate_incident_policy():
         'impact_details': ['hardware_fault_log'],
     }
     
-    incident_policy_df = incident_policy_df.append(incident_1_entry,ignore_index=True)
+    incident_policy_df = pd.concat([incident_policy_df,pd.DataFrame([incident_1_entry])],ignore_index=True)
     
     incident_1_entry = {
         'incident_name': 'event sequence test',
-        'period': 'minute',
+        'period': 'hour',
         'entity_table': 'interfaces',
         'entity_column': 'device_name',
         'entity_name': 'PE-57',
         'impact_type':'event',
-        'impact_details': ['interface_down',1,'bgp_session_down',2,'interface_up',3,'bgp_session_up'],
+        'impact_details': ['interface_down',2,'interface_up'],
     }
-    
-    incident_policy_df = incident_policy_df.append(incident_1_entry,ignore_index=True)
-    
+
+    incident_policy_df = pd.concat([incident_policy_df,pd.DataFrame([incident_1_entry])],ignore_index=True)
+
     incident_1_entry = {
-        'incident_name': 'optics failure in PE-10',
-        'period': 'minute',
+        'incident_name': 'event sequence test',
+        'period': 'hour',
+        'entity_table': 'bgp_sessions',
+        'entity_column': 'device_name',
+        'entity_name': 'PE-57',
+        'impact_type':'event',
+        'impact_details': ['bgp_session_down',3,'bgp_session_up'],
+    }
+
+    incident_policy_df = pd.concat([incident_policy_df,pd.DataFrame([incident_1_entry])],ignore_index=True)
+      
+
+    incident_1_entry = {
+        'incident_name': 'optics failure in PE-15',
+        'period': 'hour',
         'entity_table': 'interfaces',
         'entity_column': 'device_name',
-        'entity_name': 'PE-10',
+        'entity_name': 'PE-15',
         'impact_type':'event',
-        'impact_details': ['interface_optics_fault',0,'interface_local_fault',0,'interface_down',1,'bgp_session_down',3,'interface_up',4,'bgp_session_up'],
+        'impact_details': ['interface_optics_fault',0,'interface_local_fault',0,'interface_down',3,'interface_up'],
     }
     
-    incident_policy_df = incident_policy_df.append(incident_1_entry,ignore_index=True)
+    incident_policy_df = pd.concat([incident_policy_df,pd.DataFrame([incident_1_entry])],ignore_index=True)
+
+    incident_1_entry = {
+        'incident_name': 'optics failure in PE-15',
+        'period': 'hour',
+        'entity_table': 'bgp_sessions',
+        'entity_column': 'device_name',
+        'entity_name': 'PE-15',
+        'impact_type':'event',
+        'impact_details': ['bgp_session_down',4,'bgp_session_up'],
+    }
     
+    incident_policy_df = pd.concat([incident_policy_df,pd.DataFrame([incident_1_entry])],ignore_index=True)
+
     incident_1_entry = {
         'incident_name': 'optics failure in PE-10',
-        'period': 'minute',
+        'period': 'hour',
         'entity_table': 'interfaces',
         'entity_column': 'peer_device_name',
         'entity_name': 'PE-10',
         'impact_type':'event',
-        'impact_details': ['interface_optics_fault',0,'interface_local_fault',0,'interface_down',1,'bgp_session_down',3,'interface_up',4,'bgp_session_up'],
+        'impact_details': ['interface_optics_fault',0,'interface_local_fault',0,'interface_down',3,'interface_up'],
     }
     
-    incident_policy_df = incident_policy_df.append(incident_1_entry,ignore_index=True)
-    
-    
+    incident_policy_df = pd.concat([incident_policy_df,pd.DataFrame([incident_1_entry])],ignore_index=True)
 
+    incident_1_entry = {
+        'incident_name': 'optics failure in PE-10',
+        'period': 'hour',
+        'entity_table': 'bgp_sessions',
+        'entity_column': 'peer_device_name',
+        'entity_name': 'PE-10',
+        'impact_type':'event',
+        'impact_details': ['bgp_session_down',4,'bgp_session_up'],
+    }
+    
+    incident_policy_df = pd.concat([incident_policy_df,pd.DataFrame([incident_1_entry])],ignore_index=True)
 
     return incident_policy_df
 
@@ -1536,13 +1881,14 @@ def run_incidents_on_metrics(target_time,incident_policy,metrics,entity_type,met
 
 
 
-def run_incidents_on_events(target_time,incident_policy,event_templates,time_delta,device_inventory,interface_inventory):
+def run_incidents_on_events(target_time,incident_policy,event_templates,time_delta,device_inventory,interface_inventory,bgp_inventory):
     new_event_list = []
-    
+
     impact_mask = incident_policy['impact_type']=='event'
     target_incidents = incident_policy[impact_mask]
     for i,impact in target_incidents.iterrows():
-        
+        #random offest for the generation of events (0 to 180 seconds) belonging to an incident. Shifts an incident a number of seconds.
+        random_offset = np.random.randint(0,180)
         period = impact['period']
         event_required,n = start_of_period(target_time,period,time_delta,offset = 0)
         if event_required:
@@ -1555,9 +1901,13 @@ def run_incidents_on_events(target_time,incident_policy,event_templates,time_del
             elif impact['entity_table']=='interfaces':
                 target_resources_mask = interface_inventory.loc[:,entity_column]==entity_name
                 target_resources = interface_inventory[target_resources_mask]
+            elif impact['entity_table']=='bgp_sessions':
+                target_resources_mask = bgp_inventory.loc[:,entity_column]==entity_name
+                target_resources = bgp_inventory[target_resources_mask]
             for j,resource in target_resources.iterrows():
                 event_template_mask = event_templates['event_name']==impact['impact_details'][0]
                 template = event_templates.loc[event_template_mask,:]
+                
                 template_field_map = event_templates.loc[event_template_mask,'field_map'].values[0]
                 event_id= template.index.values[0]
     
@@ -1566,6 +1916,7 @@ def run_incidents_on_events(target_time,incident_policy,event_templates,time_del
                 event_policy_entry = {
                     'policy_name':impact['incident_name'],
                     'event_id': event_id,
+                    'event_uuid': str(uuid.uuid4()),
                     'period': period,
                     'probability': 100,
                     'entity_table': impact['entity_table'],
@@ -1573,7 +1924,7 @@ def run_incidents_on_events(target_time,incident_policy,event_templates,time_del
                     'entity_name': resource['device_name'],
                     'fields': field_list                   
                 }
-                new_event=generate_event(target_time,event_policy_entry,event_templates)
+                new_event=generate_event(target_time+timedelta(seconds=random_offset),event_policy_entry,event_templates)
                 new_event_list.append(new_event)
             if len(impact['impact_details'])>1:
                 for w in range(int(len(impact['impact_details'])/2)):
@@ -1588,9 +1939,13 @@ def run_incidents_on_events(target_time,incident_policy,event_templates,time_del
                         elif impact['entity_table']=='interfaces':
                             target_resources_mask = interface_inventory.loc[:,entity_column]==entity_name
                             target_resources = interface_inventory[target_resources_mask]
+                        elif impact['entity_table']=='bgp_sessions':
+                            target_resources_mask = bgp_inventory.loc[:,entity_column]==entity_name
+                            target_resources = bgp_inventory[target_resources_mask]
                         for j,resource in target_resources.iterrows():
                             event_template_mask = event_templates['event_name']==impact['impact_details'][p+1]
                             template = event_templates.loc[event_template_mask,:]
+                            
                             template_field_map = event_templates.loc[event_template_mask,'field_map'].values[0]
                             event_id= template.index.values[0]
                 
@@ -1598,6 +1953,7 @@ def run_incidents_on_events(target_time,incident_policy,event_templates,time_del
                             event_policy_entry = {
                                 'policy_name':impact['incident_name'],
                                 'event_id': event_id,
+                                'event_uuid': str(uuid.uuid4()),
                                 'period': period,
                                 'probability': 100,
                                 'entity_table': impact['entity_table'],
@@ -1605,7 +1961,7 @@ def run_incidents_on_events(target_time,incident_policy,event_templates,time_del
                                 'entity_name': resource['device_name'],
                                 'fields': field_list                   
                             }
-                            new_event=generate_event(target_time+timedelta(minutes=impact['impact_details'][p]),event_policy_entry,event_templates)
+                            new_event=generate_event(target_time+timedelta(minutes=impact['impact_details'][p])+timedelta(seconds=random_offset),event_policy_entry,event_templates)
                             new_event_list.append(new_event)
         
     return new_event_list
@@ -1721,18 +2077,23 @@ def generate_events(target_time,params):
     #device_inventory contains all devices on the use case and their labels
     device_inventory = generate_device_inventory()
     interface_inventory = generate_interface_inventory()
+    bgp_inventory = generate_bgp_inventory()
     event_templates = generate_event_templates()
-    event_policy = generate_event_policy(event_templates,device_inventory,interface_inventory)
-    for i,entry in event_policy.iterrows():
-        period = entry['period']
-        event_required,n = start_of_period(target_time,period,time_delta,offset = 0)
-        if event_required:
-            random_number = np.random.randint(0,100)
-            if random_number < entry['probability']:
-                new_event=generate_event(target_time,entry,event_templates)
-                event_list.append(new_event)
+    event_policy = generate_event_policy(event_templates,device_inventory,interface_inventory,bgp_inventory)
+    unique_events = event_policy['event_uuid'].unique().tolist()
+    for unique_event in unique_events:
+        uuid_mask = event_policy['event_uuid']==unique_event
+        event_df = event_policy[uuid_mask]
+        random_number = np.random.randint(0,100)
+        for i,entry in event_df.iterrows():
+            period = entry['period']
+            event_required,n = start_of_period(target_time,period,time_delta,offset = 0)
+            if event_required:
+                if random_number < entry['probability']:
+                    new_event=generate_event(target_time,entry,event_templates)
+                    event_list.append(new_event)
     incident_policy = generate_incident_policy()
-    incident_events = run_incidents_on_events(target_time,incident_policy,event_templates,time_delta,device_inventory,interface_inventory)
+    incident_events = run_incidents_on_events(target_time,incident_policy,event_templates,time_delta,device_inventory,interface_inventory,bgp_inventory)
     event_list += incident_events
     return event_list
 
@@ -1832,15 +2193,16 @@ def generate_device_metric_time_range(start_time,end_time,params,device_list,met
         target_time += timedelta(minutes=time_delta)
     metrics_df = pd.DataFrame(columns=metric_object[0].keys())
     for metric_object in metric_object_list:
-        metrics_df=metrics_df.append(metric_object[0],ignore_index=True)
+        metrics_df=pd.concat([metrics_df,pd.DataFrame([metric_object[0]])],ignore_index=True)   
     return metrics_df
 
 
 def generate_events_time_range(start_time,end_time,params,device_list,device_filter = "none",with_incidents=False):
     device_inventory = generate_device_inventory()
     interface_inventory = generate_interface_inventory()
+    bgp_inventory = generate_bgp_inventory()
     event_templates = generate_event_templates()
-    event_policy = generate_event_policy(event_templates,device_inventory,interface_inventory)
+    event_policy = generate_event_policy(event_templates,device_inventory,interface_inventory,bgp_inventory)
     if with_incidents:
         incident_policy = generate_incident_policy()
     time_delta = params.get('time_delta')
@@ -1862,25 +2224,34 @@ def generate_events_time_range(start_time,end_time,params,device_list,device_fil
     for device in target_device_list:
         interface_mask = np.logical_or(interface_mask,interface_inventory['device_name']==device)
     target_interface_list = interface_inventory[interface_mask]['link_id'].to_list()
+    bgp_mask = np.zeros(bgp_inventory.shape[0])
+    for device in target_device_list:
+        bgp_mask = np.logical_or(bgp_mask,bgp_inventory['device_name']==device)
+    target_bgp_list = bgp_inventory[bgp_mask]['session_id'].to_list()
     event_list = []
     while target_time < end_time:
-        for i,entry in event_policy.iterrows():
-            period = entry['period']
-            if entry['entity_name'] in target_device_list or entry['entity_name'] in target_interface_list:
-                event_required,n = start_of_period(target_time,period,time_delta,offset = 0)
-                if event_required:
-                    random_number = np.random.randint(0,100)
-                    if random_number < entry['probability']:
-                        new_event=generate_event(target_time,entry,event_templates)
-                        event_list.append(new_event)
+        unique_events = event_policy['event_uuid'].unique().tolist()
+        for unique_event in unique_events:
+            uuid_mask = event_policy['event_uuid']==unique_event
+            event_df = event_policy[uuid_mask]
+            random_number = np.random.randint(0,100)
+            for i,entry in event_df.iterrows():
+                period = entry['period']
+                if entry['entity_name'] in target_device_list or entry['entity_name'] in target_interface_list or entry['entity_name'] in target_bgp_list:
+                    event_required,n = start_of_period(target_time,period,time_delta,offset = 0)
+                    if event_required:
+                        if random_number < entry['probability']:
+                            new_event=generate_event(target_time,entry,event_templates)
+                            event_list.append(new_event)
         if with_incidents:
-            incident_events = run_incidents_on_events(target_time,incident_policy,event_templates,time_delta,device_inventory,interface_inventory)
+            incident_events = run_incidents_on_events(target_time,incident_policy,event_templates,time_delta,device_inventory,interface_inventory,bgp_inventory)
             event_list += incident_events
         target_time += timedelta(minutes=time_delta)
         
     events_df = pd.DataFrame(columns=event_list[0].keys())
     for event_object in event_list:
-        events_df=events_df.append(event_object,ignore_index=True)
+        events_df = pd.concat([events_df, pd.DataFrame([event_object])], ignore_index=True)
+        
     events_df = events_df.sort_values('timestamp',ascending=True)
     return events_df
 
